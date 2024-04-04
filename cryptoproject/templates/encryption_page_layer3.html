@@ -1,0 +1,121 @@
+{% extends "main.html" %}
+{% block title %}Encrypt your File{% endblock title %}
+{%block style %}
+<link rel="stylesheet" type="text/css" href="../media/css/upload.css" />
+{%endblock style %}
+{% block content %}
+<div class="container">
+    <div class="sub-container">
+        <form class="form-group" method='POST' enctype='multipart/form-data'>
+            {% csrf_token %}
+            <div>
+                <label for="filename">Enter Your Filename with extension</label>
+                <input class="name-user" type='text' name='filename' />
+            </div>
+            <div class="input-div" id="fileUploadDiv">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                    class="bi bi-plus-circle" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                    <path
+                        d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                </svg>
+                <div class="choose-file" hidden>Selected File</div>
+                <span class="file-name" hidden></span>
+                <label class="input-group-text" for="file">Drop your files here </label>
+                <p><span>Browse file</span> from your computer</p>
+                <input class="form-control" type="file" name="file" id="fileInput" hidden />
+            </div>
+            <br />
+            <button class="submit-btn disabled" type='submit'>Upload</button>
+        </form>
+    </div>
+    {% if key1 %}{% endif %}
+    <div class="sub-container-2">
+        <h1>These keys are very important 3rd key will be required for 1st layer decryption and 2nd key will be required
+            for the 2nd layer decryption and 1st key will be required for the 3rd layer</h4>
+        </h1>
+        <div class="btn-div">
+            <a class="btn btn-secondary" href='/media/key/filekey.key' download>Download key 1</a>
+            <a class="btn btn-secondary" href='/media/key/filekeyl2.key' download>Download key 2</a>
+            <a class="btn btn-secondary" href='/media/key/{{filename}}_RSA_private.pem' download>Download key 3</a>
+        </div>
+        <br />
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var fileInput = document.getElementById("fileInput");
+        var fileUploadDiv = document.getElementById("fileUploadDiv");
+        var chooseFileDiv = document.querySelector(".choose-file");
+        var fileNameSpan = document.querySelector(".file-name");
+        var userNameInput = document.querySelector(".name-user");
+        var submitBtn = document.querySelector(".submit-btn");
+
+        fileUploadDiv.addEventListener("click", function () {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener("change", function () {
+            // Handle selected file
+            var selectedFile = fileInput.files[0];
+            if (selectedFile) {
+                chooseFileDiv.textContent = "Selected File:";
+                fileNameSpan.textContent = selectedFile.name;
+                chooseFileDiv.hidden = false;
+                fileNameSpan.hidden = false;
+            }
+        });
+
+        userNameInput.addEventListener("input", function () {
+            updateSubmitButton();
+        });
+
+        // Add drag-and-drop functionality
+        fileUploadDiv.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            fileUploadDiv.classList.add("dragover");
+        });
+
+        fileUploadDiv.addEventListener("dragleave", function () {
+            fileUploadDiv.classList.remove("dragover");
+        });
+
+        fileUploadDiv.addEventListener("drop", function (e) {
+            e.preventDefault();
+            fileUploadDiv.classList.remove("dragover");
+
+            // Handle dropped files
+            var droppedFiles = e.dataTransfer.files;
+
+            // You can process the dropped files as needed
+            if (droppedFiles.length > 0) {
+                fileInput.files = droppedFiles;
+                chooseFileDiv.textContent = "Selected File:";
+                fileNameSpan.textContent = droppedFiles[0].name;
+                chooseFileDiv.hidden = false;
+                fileNameSpan.hidden = false;
+            }
+        });
+
+        function updateSubmitButton() {
+            // Disable the button if the username field is empty
+            submitBtn.disabled = userNameInput.value.trim() === "";
+            if (submitBtn.disabled) {
+                submitBtn.classList.add("disabled");
+            } else {
+                submitBtn.classList.remove("disabled");
+            }
+        }
+
+        // Prevent form submission when the button is disabled
+        document.querySelector("form").addEventListener("submit", function (e) {
+            if (submitBtn.disabled) {
+                e.preventDefault();
+            }
+        });
+    });
+
+</script>
+{% endblock content %}

@@ -1,0 +1,148 @@
+from Crypto.PublicKey import RSA
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import AES, PKCS1_OAEP
+
+def generate_rsa_key(filename):
+    key = RSA.generate(2048)
+    private_key = key.export_key()
+    file_out = open(f"media/key/{filename}_RSA_private.pem", "wb")
+    file_out.write(private_key)
+    file_out.close()
+
+    public_key = key.publickey().export_key()
+    file_out = open(f"media/key/{filename}_RSA_receiver.pem", "wb")
+    file_out.write(public_key)
+    file_out.close()
+    return private_key
+
+def rsaenc(data_path, filename):
+    with open(f'{data_path}', 'rb') as f:
+        data = f.read()
+    file_out_path = f'media/files/{filename}.bin'
+    file_out = open(f'media/files/{filename}.bin', 'wb')
+
+    recipient_key = RSA.import_key(open(f"media/key/{filename}_RSA_receiver.pem").read())
+    session_key = get_random_bytes(16)
+
+    cipher_rsa  = PKCS1_OAEP.new(recipient_key)
+    enc_session_key = cipher_rsa.encrypt(session_key)
+
+    cipher_aes = AES.new(session_key, AES.MODE_EAX)
+    ciphertext, tag = cipher_aes.encrypt_and_digest(data)
+    [file_out.write(x) for x in (enc_session_key, cipher_aes.nonce, tag, ciphertext) ]
+    file_out.close()
+    return file_out_path
+
+def rsadec(data_path, filename, key):
+    file_in = open(f'{data_path}', 'rb')
+
+    # private_key = key.read()
+
+    enc_session_key, nonce, tag, ciphertext = [file_in.read(x) for x in (key.size_in_bytes(), 16, 16, -1)]
+    cipher_rsa = PKCS1_OAEP.new(key)
+    session_key = cipher_rsa.decrypt(enc_session_key)
+
+    cipher_aes = AES.new(session_key, AES.MODE_EAX, nonce)
+    data = cipher_aes.decrypt_and_verify(ciphertext, tag)
+    with open(f'media/non_enc_file/{filename}', 'wb') as f:
+        f.write(data)
+from cryptography.fernet import Fernet
+import os
+from . import RSA_algo_three as rsa
+
+def encrypt3l1(FILE):
+
+    layerkey1 = Fernet.generate_key()
+
+    with open('media/key/filekey.key', 'wb') as filekey:
+        filekey.write(layerkey1)
+
+    with open('media/key/filekey.key', 'rb') as filekey:
+        key = filekey.read()
+
+    fernet = Fernet(key)
+    with open(FILE, 'rb') as file:
+        original =  file.read()
+
+    encrypted = fernet.encrypt(original)
+
+    with open(FILE, 'wb') as encrypted_file:
+        encrypted_file.write(encrypted)
+    
+    return layerkey1
+
+def encrypt3l2(FILE, filename):
+    layerkey2 = Fernet.generate_key()
+    with open('media/key/filekeyl2.key', 'wb') as filekey:
+        filekey.write(layerkey2)
+    
+    with open('media/key/filekeyl2.key', 'rb') as filekey:
+        key = filekey.read()
+    
+    fernet = Fernet(key)
+    with open(FILE, 'rb') as file:
+        original = file.read()
+    encrypted = fernet.encrypt(original)
+    with open(f'media/non_enc_file/{filename}', 'wb') as encrypted_file:
+        encrypted_file.write(encrypted)
+    
+    return layerkey2
+
+
+def encrypt3l3(FILE, filename):
+    key = rsa.generate_rsa_key(filename)
+    file_path = rsa.rsaenc(FILE, filename)
+    return key, file_path
+
+
+
+# def encrypt3l3(FILE, filename):
+#     layerkey3 = Fernet.generate_key()
+#     with open('media/key/filekeyl3.key', 'wb') as filekey:
+#         filekey.write(layerkey3)
+    
+#     with open('media/key/filekeyl3.key', 'rb') as filekey:
+#         key = filekey.read()
+    
+#     fernet = Fernet(key)
+
+#     with open(FILE, 'rb') as file:
+#         original = file.read()
+#     encrypted = fernet.encrypt(original)
+#     with open(f'media/files/{filename}', 'wb') as encrypted_file:
+#         encrypted_file.write(encrypted)
+#     os.remove(FILE)
+#     PATH_OF_FILE = f'media/files/{filename}'
+
+#     return layerkey3, PATH_OF_FILE
+
+
+def decrypt3l1(FILE, filename):
+    keyl1 = open(f'media/key/{filename}_RSA_private.pem', 'rb')
+    keyl1 = RSA.import_key(keyl1.read())
+    rsa.rsadec(FILE, filename, keyl1)
+
+
+def decrypt3l2(filename,keyl2):
+    key = keyl2.read()
+    fernet = Fernet(key)
+    with open(f'media/non_enc_file/{filename}', 'rb') as f:
+        enc_file = f.read()
+    dec_file = fernet.decrypt(enc_file)
+    with open(f'media/non_enc_file/{filename}', 'wb') as f:
+        f.write(dec_file)
+
+
+
+
+def decrypt3l3(filename, keyl3):
+    key = keyl3.read()
+    fernet = Fernet(key)
+    with open(f'media/non_enc_file/{filename}', 'rb') as f:
+        enc_file = f.read()
+    
+    original = fernet.decrypt(enc_file)
+    with open(f'media/non_enc_file/{filename}', 'wb') as f:
+        f.write(original)
+
+

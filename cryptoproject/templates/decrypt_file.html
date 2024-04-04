@@ -1,0 +1,184 @@
+{% extends "main.html" %}
+{% block title %}Decrypt your file{% endblock title %}
+{%block style %}
+<link rel="stylesheet" type="text/css" href="../media/css/decrypt.css" />
+{%endblock style %}
+{% block content %}
+<div class="container">
+    <div class="sub-container">
+        <form method='POST' enctype='multipart/form-data' class="form-group">
+            {% csrf_token %}
+            <div class="parent-upload">
+                <div class="input-div" id="fileUploadDiv">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        class="bi bi-plus-circle" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                        <path
+                            d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                    </svg>
+                    <div class="choose-file" hidden>Selected File</div>
+                    <span class="file-name" hidden></span>
+                    <label class="input-group-text" for='decryptlayer1'>Enter key for 1st layer Decryption(2nd key you
+                        were
+                        provided) </label>
+                    <p><span>Browse file</span> from your computer</p>
+                    <input class="form-control" type='FILE' id="fileInput" name='keyl1' hidden /><br />
+                </div>
+
+                <div class="input-div" id="fileUploadDiv2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                        class="bi bi-plus-circle" viewBox="0 0 16 16">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                        <path
+                            d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                    </svg>
+                    <div class="choose-file2" hidden>Selected File</div>
+                    <span class="file-name2" hidden></span>
+                    <label class="input-group-text" for='decryptlayer2'>Enter key for 2nd layer Decryption (1st key you
+                        were
+                        provided)</label><br />
+                    <p><span>Browse file</span> from your computer</p>
+                    <input class="form-control" type='FILE' id="fileInput2" name='keyl2' hidden /><br />
+                </div>
+            </div>
+            <button class="submit-btn disabled" type='submit'>Upload</button>
+        </form>
+    </div>
+
+    {% if file_path %}
+    <div class="sub-container-2">
+        <div class="btn-div">
+            <a style="width: 300px;" class='btn btn-secondary form-control' href="{{file_path}}">Download decrypted file here</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var fileInput = document.getElementById("fileInput");
+        var fileUploadDiv = document.getElementById("fileUploadDiv");
+        var chooseFileDiv = document.querySelector(".choose-file");
+        var fileNameSpan = document.querySelector(".file-name");
+
+        var fileInput2 = document.getElementById("fileInput2");
+        var fileUploadDiv2 = document.getElementById("fileUploadDiv2");
+        var chooseFileDiv2 = document.querySelector(".choose-file2");
+        var fileNameSpan2 = document.querySelector(".file-name2");
+
+
+        var submitBtn = document.querySelector(".submit-btn");
+
+        fileUploadDiv.addEventListener("click", function () {
+            fileInput.click();
+        });
+        fileUploadDiv2.addEventListener("click", function () {
+            fileInput2.click();
+        });
+
+
+        fileInput.addEventListener("change", function () {
+            // Handle selected file
+            var selectedFile = fileInput.files[0];
+            if (selectedFile) {
+                chooseFileDiv.textContent = "Selected File:";
+                fileNameSpan.textContent = selectedFile.name;
+                chooseFileDiv.hidden = false;
+                fileNameSpan.hidden = false;
+            }
+            updateSubmitButton();
+        });
+
+        fileInput2.addEventListener("change", function () {
+            // Handle selected file
+            var selectedFile = fileInput2.files[0];
+            if (selectedFile) {
+                chooseFileDiv2.textContent = "Selected File:";
+                fileNameSpan2.textContent = selectedFile.name;
+                chooseFileDiv2.hidden = false;
+                fileNameSpan2.hidden = false;
+            }
+            updateSubmitButton();
+        });
+
+
+        // Add drag-and-drop functionality
+        fileUploadDiv.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            fileUploadDiv.classList.add("dragover");
+        });
+        fileUploadDiv2.addEventListener("dragover", function (e) {
+            e.preventDefault();
+            fileUploadDiv2.classList.add("dragover");
+        });
+
+        fileUploadDiv.addEventListener("dragleave", function () {
+            fileUploadDiv.classList.remove("dragover");
+        });
+        fileUploadDiv2.addEventListener("dragleave", function () {
+            fileUploadDiv2.classList.remove("dragover");
+        });
+
+
+        fileUploadDiv.addEventListener("drop", function (e) {
+            e.preventDefault();
+            fileUploadDiv.classList.remove("dragover");
+
+            // Handle dropped files
+            var droppedFiles = e.dataTransfer.files;
+
+            // You can process the dropped files as needed
+            if (droppedFiles.length > 0) {
+                fileInput.files = droppedFiles;
+                chooseFileDiv.textContent = "Selected File:";
+                fileNameSpan.textContent = droppedFiles[0].name;
+                chooseFileDiv.hidden = false;
+                fileNameSpan.hidden = false;
+            }
+            updateSubmitButton();
+        });
+
+        fileUploadDiv2.addEventListener("drop", function (e) {
+            e.preventDefault();
+            fileUploadDiv2.classList.remove("dragover");
+
+            // Handle dropped files
+            var droppedFiles = e.dataTransfer.files;
+
+            // You can process the dropped files as needed
+            if (droppedFiles.length > 0) {
+                fileInput2.files = droppedFiles;
+                chooseFileDiv2.textContent = "Selected File:";
+                fileNameSpan2.textContent = droppedFiles[0].name;
+                chooseFileDiv2.hidden = false;
+                fileNameSpan2.hidden = false;
+            }
+            updateSubmitButton();
+        });
+
+        function updateSubmitButton() {
+            // Disable the button if the username field is empty
+            if (fileInput.files[0] && fileInput2.files[0]) {
+                submitBtn.disabled = false;
+            }
+            else {
+                submitBtn.disabled = true;
+            }
+            if (submitBtn.disabled) {
+                submitBtn.classList.add("disabled");
+            } else {
+                submitBtn.classList.remove("disabled");
+            }
+        }
+
+        // Prevent form submission when the button is disabled
+        document.querySelector("form").addEventListener("submit", function (e) {
+            if (submitBtn.disabled) {
+                e.preventDefault();
+            }
+        });
+    });
+
+</script>
+
+{% endblock content %}
